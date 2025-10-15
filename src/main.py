@@ -29,12 +29,24 @@ def obter_input_valido(prompt: str, funcao_validacao):
             print(mensagem)
 
 def input_enviar_mensagem(from_user):
-    to_user = input("Digite o @ do destinatário: ")
-    
+    while (True):
+        to_user = input("Digite o @ do destinatário: ")
+
+        if not to_user.startswith('@'):
+            to_user = '@' + to_user 
+            
+        if not to_user or to_user == '@':
+            print("Erro: O nome de usuário não pode ser vazio.")
+            continue 
+
+        if connection.verificar_usuario_existe(to_user):
+            break 
+        else:
+            print(f" Erro: O usuário '{to_user}' não existe. Tente novamente.")
+            
     title = input("Digite o título da mensagem: ")
 
     while(True):
-
         text = input("Digite o texto da mensagem (mínimo 50 caracteres): ")
 
         if len(text) >= 50:
@@ -54,15 +66,76 @@ def input_enviar_mensagem(from_user):
         mensagem_cifrada,
         status="nao lida"
     )
+    connection.enviar_mensagem(new_message) 
+    
+    print("\nMensagem enviada com sucesso\n")
 
-    connection.enviar_mensagem(new_message)
+def input_listar_mensagens(usuario_logado, connection):
+    print("\n--- CAIXA DE ENTRADA: MENSAGENS NÃO LIDAS ---")
+    
+    mensagens = connection.listar_mensagens_nao_lidas(usuario_logado.nickname)
+    
+    if not mensagens:
+        print("Você não tem mensagens não lidas.")
+        return
 
+    print(f"Você tem {len(mensagens)} mensagem(ns) não lida(s):")
+    print("-" * 40)
 
+    mapa_mensagens = {} 
+    
+    for i, msg in enumerate(mensagens):
+        numero = i + 1
+        mapa_mensagens[numero] = msg 
+        
+        print(f"[{numero}] De: {msg['from']} | Título: {msg['title']}")
+        print("-" * 40)
+        
+    while True:
+        try:
+            escolha = input("Digite o [número] da mensagem que deseja ler (ou [S] para sair): ").upper()
+            
+            if escolha == 'S':
+                return
+            
+            numero_escolhido = int(escolha)
+            
+            if numero_escolhido in mapa_mensagens:
+                msg_escolhida = mapa_mensagens[numero_escolhido]
+                
+                print(f"\nDetalhes da Mensagem #{numero_escolhido}")
+                print(f"Título: {msg_escolhida['title']}")
+                print(f"Remetente: {msg_escolhida['from']}")
 
+                try:
+                    senha_bytes = bytes(input(" Digite a chave para descriptografar: "),'utf-8')
+                    
+                    mensagem_cifrada = msg_escolhida['message']
+                    
+                    mensagem_descriptografada_bytes = Security.decrypt(senha_bytes, mensagem_cifrada)
+                    
+                    texto_original = mensagem_descriptografada_bytes.decode('utf-8')
+                    
+                    print("\n=============================================")
+                    print(f"** MENSAGEM ORIGINAL **\n{texto_original}")
+                    print("=============================================\n")
+                    
+                    if connection.marcar_como_lida(msg_escolhida['_id']):
+                        print("\n")
+                    else:
+                        print(" Aviso: Falha ao atualizar o status da mensagem no banco de dados.")
+                    return 
+                        
+                except Exception as e:
+                    print(f" ERRO na Descriptografia: A chave pode estar incorreta ou a mensagem corrompida. ({e})")
+                    
+            else:
+                print(" Número de mensagem inválido. Tente novamente.")
+                
+        except ValueError:
+            print(" Entrada inválida. Digite um número ou 'S' para sair.")
 
 def main():
-    
-    
     
     db = connection.getDataBase()
     
@@ -122,8 +195,7 @@ def main():
                 input_enviar_mensagem(usuario_logado.nickname)
                 
             elif escolha == '2':
-                print(f"Deslogando de {usuario_logado.nickname}.")
-                usuario_logado = None 
+                input_listar_mensagens(usuario_logado, connection)
                 
             elif escolha == '3':
                 print("Saindo do programa. Até mais!")
