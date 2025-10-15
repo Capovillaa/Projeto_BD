@@ -7,6 +7,77 @@ class User:
         self.senha = senha
         self.nickname = nickname
 
+    @staticmethod
+    def validar_email(email):
+        if email.count('@') != 1:
+            return False, "Erro: O e-mail deve conter um símbolo '@'."
+        
+        partes = email.split('@')
+        dominio = partes[1]
+        
+        if '.' not in dominio:
+            return False, "Erro: O domínio do e-mail (parte após o '@') deve conter um ponto (.)."
+        
+        if len(email) < 8: 
+             return False, "Erro: E-mail muito curto."
+
+        return True, ""
+    
+    @staticmethod
+    def validar_senha(senha):
+        CARACTERES_ESPECIAIS = '!@#$%^&*()-_+=[]{}|;:,.<>?'
+
+        if len(senha) < 8:
+            return False, "Erro: A senha deve ter pelo menos 8 caracteres."
+            
+        if ' ' in senha:
+            return False, "Erro: A senha não pode conter espaços."
+            
+        tem_maiuscula = False
+        tem_minuscula = False
+        tem_numero = False
+        tem_especial = False
+        
+        for char in senha:
+            if char.isupper():
+                tem_maiuscula = True
+            elif char.islower():
+                tem_minuscula = True
+            elif char.isdigit():
+                tem_numero = True
+            elif char in CARACTERES_ESPECIAIS:
+                tem_especial = True
+            
+        if not tem_maiuscula:
+            return False, "Erro: A senha deve conter pelo menos uma letra maiúscula."
+        if not tem_minuscula:
+            return False, "Erro: A senha deve conter pelo menos uma letra minúscula."
+        if not tem_numero:
+            return False, "Erro: A senha deve conter pelo menos um número."
+        if not tem_especial:
+            return False, "Erro: A senha deve conter pelo menos um caractere especial (!@#$%...). "
+            
+        return True, ""
+    
+    @staticmethod    
+    def validar_nickname(nickname):
+        if len(nickname) < 3:
+            return False, "Erro: Nickname deve conter mais de 3 caracteres "
+        if ' ' in nickname:
+            return False, "Erro: Nickname não deve ter espaços"
+        
+        return True, ""
+    
+    def verificar_duplicidade(self, db):
+        users_collection = db['users']
+
+        if users_collection.find_one({"email": self.email}):
+            return False, "Erro: Este e-mail já está cadastrado."
+        
+        if users_collection.find_one({"nickname": self.nickname}):
+            return False, "Erro: Este nome de usuário já está em uso."
+        return True, ""
+
     def cadastro(self,db):
         if db is None:
             print("Erro: A instância do banco de dados é inválida.")
