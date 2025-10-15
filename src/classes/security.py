@@ -35,8 +35,8 @@ class Security:
     @classmethod
     def decrypt(cls,senha: bytes, mensagem_criptografada: bytes) -> bytes:
 
-        salt = mensagem_criptografada[:cls._SALT_SIZE]
-        token = mensagem_criptografada[cls._SALT_SIZE:]
+        salt = mensagem_criptografada[:cls.SALT_SIZE]
+        token = mensagem_criptografada[cls.SALT_SIZE:]
 
         key = cls.kdf(senha,salt)
         f = Fernet(key)
