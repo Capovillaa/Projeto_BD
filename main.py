@@ -35,6 +35,10 @@ def main():
                 print("\n--- Login de Usuário ---")
                 email = input("Digite seu e-mail: ")
                 senha = input("Digite sua senha: ")
+
+                if not email or not senha:
+                    print("E-mail e senha são obrigatórios.")
+                    continue
                 
                 usuario_logado = User.login(db, email, senha) 
                 
@@ -43,11 +47,51 @@ def main():
                     
             elif escolha == '2':
                 print("\n--- Criação de Conta ---")
-                email = input("Digite seu endereco de e-mail: ")
-                nickname = "@"+ input("Digite o seu nome de usuário: ")
-                senha = input("Digite sua senha: ")
-                currentUser = User(email,senha,nickname)
-                currentUser.cadastro(db)
+    
+                while True:
+                    email = input("Digite seu endereço de e-mail: ")
+
+                    if not email:
+                        print("Erro: O e-mail não pode ser vazio.")
+                        continue
+
+                    valid_email, msg_email = User.validar_email(email)
+        
+                    if valid_email:
+                        break  
+                    else:
+                        print(msg_email) 
+            
+                while True:
+                    nickname = input("Digite o seu nome de usuário: ")
+        
+                    if not nickname:
+                        print("Erro: O nome de usuário não pode ser vazio.")
+                        continue
+            
+                    valid_nickname, msg_nickname = User.validar_nickname(nickname)
+        
+                    if valid_nickname:
+                        break  
+                    else:
+                       print(msg_nickname)
+
+                while True:
+                    senha = input("Digite sua senha: ")
+        
+                    if not senha:
+                        print("Erro: A senha não pode ser vazia.")
+                        continue
+        
+                    valid_senha, msg_senha = User.validar_senha(senha)
+        
+                    if valid_senha:
+                        currentUser = User(email, senha, nickname)
+                        if currentUser.cadastro(db):
+                            break
+                    else:
+                        print(msg_senha)
+
                 
             elif escolha == '3':
                 print("Saindo do programa. Até mais!")
@@ -71,5 +115,5 @@ def main():
             else:
                 print("Opção inválida. Por favor, tente novamente.")
 
-if __name__ == "_main_":
+if __name__ == "__main__":
     main()
