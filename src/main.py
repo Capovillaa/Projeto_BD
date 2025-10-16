@@ -40,36 +40,31 @@ def input_enviar_mensagem(from_user):
             continue 
 
         if connection.verificar_usuario_existe(to_user):
-            break 
+            title = input("Digite o título da mensagem: ")
+            while(True):
+                text = input("Digite o texto da mensagem (mínimo 50 caracteres): ")
+                if len(text) >= 50:
+                    text_bytes = bytes(text,'utf-8')
+                    senha_bytes = bytes(input("Digite a chave para criptografar: "),'utf-8')
+
+                    mensagem_cifrada = Security.encrypt(senha_bytes,text_bytes)
+
+                    new_message = Message(
+                        from_user,
+                        to_user,
+                        title,
+                        mensagem_cifrada,
+                        status="nao lida"
+                    )
+                    connection.enviar_mensagem(new_message) 
+                    
+                    return print("\nMensagem enviada com sucesso\n")
+                    
+                else:
+                    print(f"A mensagem possui apenas {len(text)} caracteres, minimo é 50!!")
         else:
             print(f" Erro: O usuário '{to_user}' não existe. Tente novamente.")
             
-    title = input("Digite o título da mensagem: ")
-
-    while(True):
-        text = input("Digite o texto da mensagem (mínimo 50 caracteres): ")
-
-        if len(text) >= 50:
-            text_bytes = bytes(text,'utf-8')
-            break
-        else:
-            print(f"A mensagem possui apenas {len(text)} caracteres, minimo é 50!!")
-
-    senha_bytes = bytes(input("Digite a chave para criptografar: "),'utf-8')
-
-    mensagem_cifrada = Security.encrypt(senha_bytes,text_bytes)
-
-    new_message = Message(
-        from_user,
-        to_user,
-        title,
-        mensagem_cifrada,
-        status="nao lida"
-    )
-    connection.enviar_mensagem(new_message) 
-    
-    print("\nMensagem enviada com sucesso\n")
-
 def input_listar_mensagens(usuario_logado, connection):
     print("\n--- CAIXA DE ENTRADA: MENSAGENS NÃO LIDAS ---")
     
@@ -130,8 +125,7 @@ def input_listar_mensagens(usuario_logado, connection):
                     print(f" ERRO na Descriptografia: A chave pode estar incorreta ou a mensagem corrompida. ({e})")
                     
             else:
-                print(" Número de mensagem inválido. Tente novamente.")
-                
+                print(" Número de mensagem inválido. Tente novamente.")           
         except ValueError:
             print(" Entrada inválida. Digite um número ou 'S' para sair.")
 
@@ -191,7 +185,6 @@ def main():
                 
         else: 
             if escolha == '1':
-                
                 input_enviar_mensagem(usuario_logado.nickname)
                 
             elif escolha == '2':

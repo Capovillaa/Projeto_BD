@@ -1,4 +1,3 @@
-#classe para gerenciar conexao com o banco de dados
 from pymongo import MongoClient
 from classes.message import Message
 
@@ -44,8 +43,7 @@ class DatabaseManager:
 
     def verificar_usuario_existe(self, nickname):        
         try:
-            users_collection = self.db['users']
-            
+            users_collection = self.db['users']         
             usuario_doc = users_collection.find_one({"nickname": nickname})
             return usuario_doc is not None
             
@@ -85,8 +83,7 @@ class DatabaseManager:
                 return True
             else:
                 print(f"Aviso: Não foi possível encontrar a mensagem com ID {message_id}.")
-                return False
-                
+                return False    
         except Exception as e:
             print(f"Erro ao marcar mensagem como lida: {e}")
             return False
