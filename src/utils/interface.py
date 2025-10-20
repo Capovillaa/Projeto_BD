@@ -84,9 +84,9 @@ def input_list_messages(logged_user, connection):
         
     while True:
         try:
-            choice = input("Enter the [number] of the message to read (or [S] to exit): ").upper() 
+            choice = input("Enter the [number] of the message to read (or [E] to exit): ").upper() 
             
-            if choice == 'S':
+            if choice == 'E':
                 return
             
             chosen_number = int(choice) 
