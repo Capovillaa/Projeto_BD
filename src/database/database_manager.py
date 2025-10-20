@@ -14,76 +14,77 @@ class DatabaseManager:
             self.client = MongoClient(self.URI)
 
             self.db = self.client[self.db_name]
-            print(f"Conexão com o MongoDB estabelecida com sucesso no banco '{self.db_name}'.")
+            print(f"MongoDB connection established successfully in database '{self.db_name}'.")
             return True
             
         except Exception as e:
-            print(f"Erro de conexão com o MongoDB: {e}")
+            print(f"MongoDB connection error: {e}")
             self.client = None
             self.db = None
             return False
     
-    def getDataBase(self):
+    def getDatabase(self):
         
         if(self.db == None):
-            print("Não há uma conexão ativa com o banco de dados.")
+            print("No active database connection.")
             
         return self.db
     
     def close(self):
         if(self.client):
             self.client.close()
-            print("Conexão com o MongoDB fechada.")
+            print("MongoDB connection closed.")
 
-    def enviar_mensagem(self,message_obj: Message):
+    def send_message(self,message_obj: Message):
    
         message_data = message_obj.to_dict()
         
         self.db['mensagens'].insert_one(message_data)
 
-    def verificar_usuario_existe(self, nickname):        
+    def check_user_exists(self, nickname):        
         try:
-            users_collection = self.db['users']         
-            usuario_doc = users_collection.find_one({"nickname": nickname})
-            return usuario_doc is not None
+            users_collection = self.db['users']       
+            user_doc = users_collection.find_one({"nickname": nickname})
+            return user_doc is not None
             
         except Exception as e:
-            print(f"Erro ao buscar usuário '{nickname}': {e}")
+            print(f"Error searching for user '{nickname}': {e}")
             return False 
 
-    def listar_mensagens_nao_lidas(self, user_logado):
+    def list_unread_messages(self, logged_user):
         try:
-            mensagens_collection = self.db['mensagens']
+            messages_collection = self.db['mensagens']
             
             query = {
-                "to": user_logado,
+                "to": logged_user,
                 "status": "nao lida"
             }
             
-            mensagens_nao_lidas = list(mensagens_collection.find(query))
+            unread_messages = list(messages_collection.find(query))
             
-            return mensagens_nao_lidas
+            return unread_messages
             
         except Exception as e:
-            print(f"Erro ao listar mensagens não lidas: {e}")
+            print(f"Error listing unread messages: {e}")
             return []
         
 
-    def marcar_como_lida(self, message_id): 
+    def mark_as_read(self, message_id): 
         try:
-            mensagens_collection = self.db['mensagens']
+            messages_collection = self.db['mensagens']
             
             query = {"_id": message_id}
             
             update = {"$set": {"status": "lida"}}
             
-            result = mensagens_collection.update_one(query, update)
+            result = messages_collection.update_one(query, update)
             
             if result.matched_count == 1:
                 return True
-            else:
-                print(f"Aviso: Não foi possível encontrar a mensagem com ID {message_id}.")
-                return False    
+            
+            print(f"Warning: Could not find message with ID {message_id}.")
+            return False   
+         
         except Exception as e:
-            print(f"Erro ao marcar mensagem como lida: {e}")
+            print(f"Error marking message as read: {e}")
             return False

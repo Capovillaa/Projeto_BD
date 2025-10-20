@@ -2,129 +2,136 @@ from database.database_manager import DatabaseManager
 
 class User:
 
-    def __init__(self,email,senha,nickname):
+    def __init__(self, email, password, nickname):
         self.email = email
-        self.senha = senha
+        self.password = password
         self.nickname = nickname
 
     @staticmethod
-    def validar_email(email):
+    def validate_email(email):
         if email.count('@') != 1:
-            return False, "Erro: O e-mail deve conter um símbolo '@'."
+            return False, "Error: The email must contain one '@' symbol." 
         
-        partes = email.split('@')
-        dominio = partes[1]
+        parts = email.split('@')
+        domain = parts[1]
         
-        if '.' not in dominio:
-            return False, "Erro: O domínio do e-mail (parte após o '@') deve conter um ponto (.)."
+        if '.' not in domain:
+            return False, "Error: The email domain (part after '@') must contain a dot (.)."
         
         if len(email) < 8: 
-             return False, "Erro: E-mail muito curto."
+            return False, "Error: Email is too short." 
 
         return True, ""
     
     @staticmethod
-    def validar_senha(senha):
-        CARACTERES_ESPECIAIS = '!@#$%^&*()-_+=[]{}|;:,.<>?'
+    # Renomeado validar_senha para validate_password
+    def validate_password(password): # Renomeado senha para password
+        # Renomeado CARACTERES_ESPECIAIS para SPECIAL_CHARACTERS
+        SPECIAL_CHARACTERS = '!@#$%^&*()-_+=[]{}|;:,.<>?' 
 
-        if len(senha) < 8:
-            return False, "Erro: A senha deve ter pelo menos 8 caracteres."
+        if len(password) < 8:
+            return False, "Error: The password must be at least 8 characters long." # Traduzido
             
-        if ' ' in senha:
-            return False, "Erro: A senha não pode conter espaços."
+        if ' ' in password:
+            return False, "Error: The password cannot contain spaces." # Traduzido
             
-        tem_maiuscula = False
-        tem_minuscula = False
-        tem_numero = False
-        tem_especial = False
+        # Variáveis booleanas traduzidas
+        has_uppercase = False
+        has_lowercase = False
+        has_number = False
+        has_special = False
         
-        for char in senha:
+        for char in password: # Renomeado senha para password
             if char.isupper():
-                tem_maiuscula = True
+                has_uppercase = True # Renomeado
             elif char.islower():
-                tem_minuscula = True
+                has_lowercase = True # Renomeado
             elif char.isdigit():
-                tem_numero = True
-            elif char in CARACTERES_ESPECIAIS:
-                tem_especial = True
+                has_number = True # Renomeado
+            elif char in SPECIAL_CHARACTERS:
+                has_special = True # Renomeado
             
-        if not tem_maiuscula:
-            return False, "Erro: A senha deve conter pelo menos uma letra maiúscula."
-        if not tem_minuscula:
-            return False, "Erro: A senha deve conter pelo menos uma letra minúscula."
-        if not tem_numero:
-            return False, "Erro: A senha deve conter pelo menos um número."
-        if not tem_especial:
-            return False, "Erro: A senha deve conter pelo menos um caractere especial (!@#$%...). "
+        if not has_uppercase: # Renomeado
+            return False, "Error: The password must contain at least one uppercase letter." # Traduzido
+        if not has_lowercase: # Renomeado
+            return False, "Error: The password must contain at least one lowercase letter." # Traduzido
+        if not has_number: # Renomeado
+            return False, "Error: The password must contain at least one number." # Traduzido
+        if not has_special: # Renomeado
+            return False, "Error: The password must contain at least one special character (!@#$%...). " # Traduzido
             
         return True, ""
     
-    @staticmethod    
-    def validar_nickname(nickname):
+    @staticmethod 
+    # Renomeado validar_nickname para validate_nickname
+    def validate_nickname(nickname):
         if len(nickname) < 3:
-            return False, "Erro: Nickname deve conter mais de 3 caracteres "
+            return False, "Error: Nickname must contain more than 3 characters." # Traduzido
         if ' ' in nickname:
-            return False, "Erro: Nickname não deve ter espaços"
+            return False, "Error: Nickname cannot have spaces." # Traduzido
         
         return True, ""
     
-    def verificar_duplicidade(self, db):
+    # Renomeado verificar_duplicidade para check_duplicity
+    def check_duplicity(self, db):
         users_collection = db['users']
 
         if users_collection.find_one({"email": self.email}):
-            return False, "Erro: Este e-mail já está cadastrado."
+            return False, "Error: This email is already registered." # Traduzido
         
         if users_collection.find_one({"nickname": self.nickname}):
-            return False, "Erro: Este nome de usuário já está em uso."
+            return False, "Error: This username is already in use." # Traduzido
         return True, ""
 
-    def cadastro(self,db):
+    # Renomeado cadastro para register
+    def register(self, db):
         if db is None:
-            print("Erro: A instância do banco de dados é inválida.")
+            print("Error: The database instance is invalid.") # Traduzido
             return False
 
         try:
             users_collection = db['users']
 
             users_collection.insert_one({
-                "email":self.email,
-                "senha":self.senha,
-                "nickname":self.nickname
+                "email": self.email,
+                "senha": self.password, # MANTER "senha" (Campo do MongoDB)
+                "nickname": self.nickname
             })
 
-            print(f"Usuário {self.nickname} cadastrado com sucesso!")
+            print(f"User {self.nickname} registered successfully!") # Traduzido
             return True
         except Exception as e:
-            print(f"Ocorreu um erro ao cadastrar o usuário: {e}")
+            print(f"An error occurred while registering the user: {e}") # Traduzido
             return False
         
-    @classmethod    
-    def login(cls, db, email, senha):
+    @classmethod 
+    def login(cls, db, email, password): # Renomeado senha para password
         if db is None:
-            print("Erro: A instância do banco de dados é inválida para login.")
+            print("Error: The database instance is invalid for login.") # Traduzido
             return None
         
         try:
             users_collection = db['users']
         
-            usuario_doc = users_collection.find_one({"email": email})
+            user_doc = users_collection.find_one({"email": email}) # Renomeado usuario_doc
             
-            if usuario_doc:
-                if usuario_doc['senha'] == senha:
-                    print(f"Login bem-sucedido!")
+            if user_doc:
+                # MANTER "senha" (Campo do MongoDB)
+                if user_doc['senha'] == password: 
+                    print(f"Login successful!") # Traduzido
                     
                     return cls(
-                        email=usuario_doc['email'], 
-                        senha=usuario_doc['senha'], 
-                        nickname=usuario_doc['nickname']
+                        email=user_doc['email'], 
+                        password=user_doc['senha'], # Usando user_doc['senha'] do BD
+                        nickname=user_doc['nickname']
                     )
                 else:
-                    print("Erro: Senha incorreta.")
+                    print("Error: Incorrect password.") # Traduzido
                     return None
             else:
-                print(f"Erro: Usuário com o email '{email}' não encontrado.")
+                print(f"Error: User with email '{email}' not found.") # Traduzido
                 return None
                 
         except Exception as e:
-            print(f"Ocorreu um erro durante o login: {e}")
+            print(f"An error occurred during login: {e}") # Traduzido
             return None

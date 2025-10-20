@@ -1,201 +1,80 @@
 from database.database_manager import DatabaseManager
 from database.connection_string import URI
 from classes.user import User
-from classes.security import Security
-from classes.message import Message
+from utils.interface import input_list_messages,input_send_message,get_valid_input
 
 DB_NAME = "Mensageria"
 connection = DatabaseManager(URI,DB_NAME)
 connection.connect()
 
-def obter_input_valido(prompt: str, funcao_validacao):
-
-    while(True):
-        
-        valor_input = input(prompt)
-
-        if not valor_input:
-            print("Este campo não pode ser vazio")
-            continue
-        
-        if "nickname" in prompt.lower():
-            valor_input = "@" + valor_input
-
-        is_valid, mensagem = funcao_validacao(valor_input)
-
-        if is_valid:
-            return valor_input
-        else:
-            print(mensagem)
-
-def input_enviar_mensagem(from_user):
-    while (True):
-        to_user = input("Digite o @ do destinatário: ")
-
-        if not to_user.startswith('@'):
-            to_user = '@' + to_user 
-            
-        if not to_user or to_user == '@':
-            print("Erro: O nome de usuário não pode ser vazio.")
-            continue 
-
-        if connection.verificar_usuario_existe(to_user):
-            title = input("Digite o título da mensagem: ")
-            while(True):
-                text = input("Digite o texto da mensagem (mínimo 50 caracteres): ")
-                if len(text) >= 50:
-                    text_bytes = bytes(text,'utf-8')
-                    senha_bytes = bytes(input("Digite a chave para criptografar: "),'utf-8')
-
-                    mensagem_cifrada = Security.encrypt(senha_bytes,text_bytes)
-
-                    new_message = Message(
-                        from_user,
-                        to_user,
-                        title,
-                        mensagem_cifrada,
-                        status="nao lida"
-                    )
-                    connection.enviar_mensagem(new_message) 
-                    
-                    return print("\nMensagem enviada com sucesso\n")
-                    
-                else:
-                    print(f"A mensagem possui apenas {len(text)} caracteres, minimo é 50!!")
-        else:
-            print(f" Erro: O usuário '{to_user}' não existe. Tente novamente.")
-            
-def input_listar_mensagens(usuario_logado, connection):
-    print("\n--- CAIXA DE ENTRADA: MENSAGENS NÃO LIDAS ---")
-    
-    mensagens = connection.listar_mensagens_nao_lidas(usuario_logado.nickname)
-    
-    if not mensagens:
-        print("Você não tem mensagens não lidas.")
-        return
-
-    print(f"Você tem {len(mensagens)} mensagem(ns) não lida(s):")
-    print("-" * 40)
-
-    mapa_mensagens = {} 
-    
-    for i, msg in enumerate(mensagens):
-        numero = i + 1
-        mapa_mensagens[numero] = msg 
-        
-        print(f"[{numero}] De: {msg['from']} | Título: {msg['title']}")
-        print("-" * 40)
-        
-    while True:
-        try:
-            escolha = input("Digite o [número] da mensagem que deseja ler (ou [S] para sair): ").upper()
-            
-            if escolha == 'S':
-                return
-            
-            numero_escolhido = int(escolha)
-            
-            if numero_escolhido in mapa_mensagens:
-                msg_escolhida = mapa_mensagens[numero_escolhido]
-                
-                print(f"\nDetalhes da Mensagem #{numero_escolhido}")
-                print(f"Título: {msg_escolhida['title']}")
-                print(f"Remetente: {msg_escolhida['from']}")
-
-                try:
-                    senha_bytes = bytes(input(" Digite a chave para descriptografar: "),'utf-8')
-                    
-                    mensagem_cifrada = msg_escolhida['message']
-                    
-                    mensagem_descriptografada_bytes = Security.decrypt(senha_bytes, mensagem_cifrada)
-                    
-                    texto_original = mensagem_descriptografada_bytes.decode('utf-8')
-                    
-                    print("\n=============================================")
-                    print(f"** MENSAGEM ORIGINAL **\n{texto_original}")
-                    print("=============================================\n")
-                    
-                    if connection.marcar_como_lida(msg_escolhida['_id']):
-                        print("\n")
-                    else:
-                        print(" Aviso: Falha ao atualizar o status da mensagem no banco de dados.")
-                    return 
-                        
-                except Exception as e:
-                    print(f" ERRO na Descriptografia: A chave pode estar incorreta ou a mensagem corrompida. ({e})")
-                    
-            else:
-                print(" Número de mensagem inválido. Tente novamente.")           
-        except ValueError:
-            print(" Entrada inválida. Digite um número ou 'S' para sair.")
-
 def main():
     
-    db = connection.getDataBase()
-    
-    usuario_logado = None 
+    db = connection.getDatabase() 
+    logged_user = None 
 
     while True:
-        print("\n--- Sistema de Mensagem ---")
+        print("\n--- Messaging System ---")
         
-        if usuario_logado:
-            print(f"Bem-vindo, {usuario_logado.nickname}!")
-            print("1. Enviar Mensagem")
-            print("2. listar mensagens")
-            print("3. Sair")
+        if logged_user:
+            print(f"Welcome, {logged_user.nickname}!") 
+            print("1. Send Message") 
+            print("2. List Messages") 
+            print("3. Logout and Exit")
         else:
             print("1. Login")
-            print("2. Criar Conta")
-            print("3. Sair")
+            print("2. Create Account") 
+            print("3. Exit") 
+            
+        choice = input("Choose an option: ") 
         
-        escolha = input("Escolha uma opção: ")
-        
-        if not usuario_logado: 
-            if escolha == '1':
-                print("\n--- Login de Usuário ---")
-                email = input("Digite seu e-mail: ")
-                senha = input("Digite sua senha: ")
+        if not logged_user: 
+            if choice == '1':
+                print("\n--- User Login ---") 
+                email = input("Enter your email: ") 
+                password = input("Enter your password: ") 
                 print("------------------------\n")
-                if not email or not senha:
-                    print("E-mail e senha são obrigatórios.")
+
+                if not email or not password:
+                    print("Email and password are required.")
                     continue
                 
-                usuario_logado = User.login(db, email, senha) 
+                logged_user = User.login(db, email, password) 
                 
-                if usuario_logado:
-                    print(f"Você está logado como {usuario_logado.nickname}.")
+                if logged_user:
+                    print(f"You are logged in as {logged_user.nickname}.")
                     
-            elif escolha == '2':
-                print("\n--- Criação de Conta ---")
+            elif choice == '2':
+                print("\n--- Account Creation ---") 
     
-                email = obter_input_valido("Digite seu e-mail: ", User.validar_email)
-                senha = obter_input_valido("Digite sua senha: ", User.validar_senha)
-                nickname = obter_input_valido("Digite o seu nickname: ", User.validar_nickname)
+                email = get_valid_input("Enter your email: ", User.validate_email)
+                password = get_valid_input("Enter your password: ", User.validate_password)
+                nickname = get_valid_input("Enter your nickname: ", User.validate_nickname)
 
-                usuario_logado = User(email,senha,nickname)
-                usuario_logado.cadastro(db)
+                logged_user = User(email, password, nickname)
+                logged_user.register(db) 
                 
-
-            elif escolha == '3':
-                print("Saindo do programa. Até mais!")
+            elif choice == '3':
+                print("Exiting program. Goodbye!") 
+                connection.close()
                 break
-            
+                
             else:
-                print("Opção inválida. Por favor, tente novamente.")
+                print("Invalid option. Please try again.") 
                 
-        else: 
-            if escolha == '1':
-                input_enviar_mensagem(usuario_logado.nickname)
+        else:
+            if choice == '1':
+                input_send_message(logged_user.nickname, connection)
                 
-            elif escolha == '2':
-                input_listar_mensagens(usuario_logado, connection)
+            elif choice == '2':
+                input_list_messages(logged_user, connection)
                 
-            elif escolha == '3':
-                print("Saindo do programa. Até mais!")
+            elif choice == '3':
+                print("Logging out and Exiting program. Goodbye!") 
+                connection.close()
                 break
-            
+                
             else:
-                print("Opção inválida. Por favor, tente novamente.")
+                print("Invalid option. Please try again.") 
 
 if __name__ == "__main__":
     main()
